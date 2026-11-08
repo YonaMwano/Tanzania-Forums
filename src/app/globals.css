@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 10% 98%;
+    --foreground: 24 10% 10%;
+  }
+
+  .dark {
+    --background: 24 10% 4%;
+    --foreground: 40 10% 96%;
+  }
+
+  * {
+    @apply border-stone-200 dark:border-stone-800;
+  }
+
+  body {
+    @apply bg-surface-light text-stone-900 antialiased dark:bg-surface-dark dark:text-stone-50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl dark:bg-stone-900/80;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
