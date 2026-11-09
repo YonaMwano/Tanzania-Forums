@@ -11,7 +11,7 @@ export const metadata = { title: "Moderation — Admin" };
 export default async function AdminModerationPage() {
   const supabase = await createClient();
 
-  const [{ data: flaggedPosts }, { data: openReports }] = await Promise.all([
+  const [{ data: flaggedRaw }, { data: reportsRaw }] = await Promise.all([
     supabase
       .from("posts")
       .select(
@@ -30,6 +30,30 @@ export default async function AdminModerationPage() {
       .order("created_at", { ascending: false })
       .limit(50),
   ]);
+
+  type FlaggedPost = {
+    id: string;
+    body: string;
+    ai_flag_reason: string | null;
+    ai_flag_confidence: number | null;
+    status: string;
+    created_at: string;
+    author?: { handle?: string; display_name?: string } | null;
+    thread?: { title?: string; slug?: string } | null;
+  };
+
+  type OpenReport = {
+    id: string;
+    reason: string;
+    details: string | null;
+    status: string;
+    priority: number;
+    created_at: string;
+    post?: { id?: string; body?: string } | null;
+  };
+
+  const flaggedPosts = flaggedRaw as unknown as FlaggedPost[] | null;
+  const openReports = reportsRaw as unknown as OpenReport[] | null;
 
   return (
     <div className="space-y-8">
@@ -69,13 +93,8 @@ export default async function AdminModerationPage() {
                   {post.body}
                 </p>
                 <div className="mt-2 text-xs text-stone-400">
-                  by{" "}
-                  {(post.author as { display_name?: string; handle?: string })?.display_name ||
-                    (post.author as { handle?: string })?.handle}{" "}
-                  in{" "}
-                  <span className="font-medium">
-                    {(post.thread as { title?: string })?.title}
-                  </span>
+                  by {post.author?.display_name || post.author?.handle} in{" "}
+                  <span className="font-medium">{post.thread?.title}</span>
                 </div>
                 <div className="mt-3">
                   <ModerationActions postId={post.id} />
@@ -115,9 +134,9 @@ export default async function AdminModerationPage() {
                     {report.details}
                   </p>
                 )}
-                {report.post && (
+                {report.post?.body && (
                   <p className="mt-2 line-clamp-2 rounded-lg bg-stone-50 p-2 text-xs text-stone-500 dark:bg-stone-800">
-                    {(report.post as { body?: string })?.body}
+                    {report.post.body}
                   </p>
                 )}
                 <div className="mt-3">

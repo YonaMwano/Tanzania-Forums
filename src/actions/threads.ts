@@ -160,13 +160,15 @@ async function generateAndSaveSummary(threadId: string, title: string) {
 
   if (!posts?.length) return;
 
-  const formatted = posts.map((p) => ({
-    body: p.body,
-    author:
-      (p.author as { display_name?: string; handle?: string })?.display_name ||
-      (p.author as { handle?: string })?.handle ||
-      "User",
-  }));
+  const formatted = posts.map((p) => {
+    const author = p.author as unknown as
+      | { display_name?: string; handle?: string }
+      | null;
+    return {
+      body: p.body,
+      author: author?.display_name || author?.handle || "User",
+    };
+  });
 
   const summary = await generateThreadSummary(title, formatted);
 

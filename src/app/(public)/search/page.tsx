@@ -8,6 +8,23 @@ interface Props {
   searchParams: Promise<{ q?: string; tab?: string }>;
 }
 
+type SearchPost = {
+  id: string;
+  body: string;
+  thread_id: string;
+  created_at: string;
+  author?: { handle: string; display_name: string | null } | null;
+  thread?: { title: string; slug: string } | null;
+};
+
+type SearchUser = {
+  id: string;
+  handle: string;
+  display_name: string | null;
+  reputation: number;
+  is_verified: boolean;
+};
+
 export const metadata = {
   title: "Search",
 };
@@ -18,8 +35,8 @@ export default async function SearchPage({ searchParams }: Props) {
   const supabase = await createClient();
 
   let threads: Thread[] = [];
-  let posts: { id: string; body: string; thread_id: string; created_at: string; author?: { handle: string; display_name: string | null }; thread?: { title: string; slug: string } }[] = [];
-  let users: { id: string; handle: string; display_name: string | null; reputation: number; is_verified: boolean }[] = [];
+  let posts: SearchPost[] = [];
+  let users: SearchUser[] = [];
 
   if (query.length >= 2) {
     if (tab === "threads" || tab === "all") {
@@ -32,7 +49,7 @@ export default async function SearchPage({ searchParams }: Props) {
         .ilike("title", `%${query}%`)
         .order("last_activity_at", { ascending: false })
         .limit(20);
-      threads = (data as Thread[]) || [];
+      threads = (data as unknown as Thread[]) || [];
     }
 
     if (tab === "posts" || tab === "all") {
@@ -45,7 +62,7 @@ export default async function SearchPage({ searchParams }: Props) {
         .ilike("body", `%${query}%`)
         .order("created_at", { ascending: false })
         .limit(20);
-      posts = data || [];
+      posts = (data as unknown as SearchPost[]) || [];
     }
 
     if (tab === "users" || tab === "all") {
@@ -56,7 +73,7 @@ export default async function SearchPage({ searchParams }: Props) {
         .or(`handle.ilike.%${query}%,display_name.ilike.%${query}%`)
         .order("reputation", { ascending: false })
         .limit(20);
-      users = data || [];
+      users = (data as SearchUser[]) || [];
     }
   }
 
@@ -122,7 +139,7 @@ export default async function SearchPage({ searchParams }: Props) {
                 posts.map((post) => (
                   <Link
                     key={post.id}
-                    href={`/t/${(post.thread as { slug?: string })?.slug}#post-${post.id}`}
+                    href={`/t/${post.thread?.slug ?? ""}#post-${post.id}`}
                     className="block rounded-xl border border-stone-200 bg-white p-4 transition hover:border-brand-300 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-brand-700"
                   >
                     <p className="line-clamp-3 text-sm text-stone-700 dark:text-stone-300">
@@ -131,11 +148,10 @@ export default async function SearchPage({ searchParams }: Props) {
                     <div className="mt-2 text-xs text-stone-400">
                       in{" "}
                       <span className="font-medium text-stone-600 dark:text-stone-300">
-                        {(post.thread as { title?: string })?.title}
+                        {post.thread?.title}
                       </span>
                       {" · "}
-                      {(post.author as { display_name?: string; handle?: string })?.display_name ||
-                        (post.author as { handle?: string })?.handle}
+                      {post.author?.display_name || post.author?.handle}
                     </div>
                   </Link>
                 ))
