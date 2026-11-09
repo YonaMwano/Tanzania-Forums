@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, MessageSquare, Flag, MoreHorizontal } from "lucide-react";
+import { Heart, MessageSquare, Flag } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
 import { toggleReaction } from "@/actions/threads";
-import { Button } from "@/components/ui/button";
 import { AuthModal } from "@/components/auth/auth-modal";
+import { useUser } from "@/hooks/use-user";
 import type { Post, User } from "@/types/database";
 
 interface PostItemProps {
   post: Post & {
-    author?: Pick<User, "id" | "handle" | "display_name" | "avatar_url" | "is_verified" | "reputation">;
+    author?: Pick<
+      User,
+      "id" | "handle" | "display_name" | "avatar_url" | "is_verified" | "reputation"
+    >;
   };
   isOP?: boolean;
   depth?: number;
@@ -26,6 +29,9 @@ export function PostItem({
   currentUserId,
   onReply,
 }: PostItemProps) {
+  const { user } = useUser();
+  const effectiveUserId = user?.id ?? currentUserId ?? null;
+
   const [liked, setLiked] = useState(false);
   const [reactionCount, setReactionCount] = useState(post.reaction_count || 0);
   const [authOpen, setAuthOpen] = useState(false);
@@ -36,7 +42,7 @@ export function PostItem({
   const indent = Math.min(depth, maxDepth) * 16;
 
   const handleLike = async () => {
-    if (!currentUserId) {
+    if (!effectiveUserId) {
       setAuthOpen(true);
       return;
     }
@@ -46,11 +52,13 @@ export function PostItem({
     if (result.success) {
       setLiked(result.added ?? false);
       setReactionCount((c) => (result.added ? c + 1 : Math.max(0, c - 1)));
+    } else if (result.error) {
+      setAuthOpen(true);
     }
   };
 
   const handleReplyClick = () => {
-    if (!currentUserId) {
+    if (!effectiveUserId) {
       setAuthOpen(true);
       return;
     }
@@ -66,13 +74,12 @@ export function PostItem({
       >
         {depth > 0 && (
           <div
-            className="absolute left-0 top-0 bottom-0 w-0.5 bg-stone-200 dark:bg-stone-700"
+            className="absolute top-0 bottom-0 w-0.5 bg-stone-200 dark:bg-stone-700"
             style={{ left: `${indent - 12}px` }}
           />
         )}
 
         <div className="flex gap-3">
-          {/* Avatar */}
           <Link
             href={author ? `/u/${author.handle}` : "#"}
             className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-sm font-semibold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"
@@ -110,7 +117,6 @@ export function PostItem({
               {post.body}
             </div>
 
-            {/* Actions */}
             <div className="mt-3 flex items-center gap-1">
               <button
                 onClick={handleLike}
@@ -135,7 +141,7 @@ export function PostItem({
 
               <button
                 onClick={() => {
-                  if (!currentUserId) setAuthOpen(true);
+                  if (!effectiveUserId) setAuthOpen(true);
                 }}
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
               >

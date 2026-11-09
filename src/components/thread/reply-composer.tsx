@@ -5,6 +5,7 @@ import { createReply } from "@/actions/threads";
 import { Button } from "@/components/ui/button";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { useLanguage } from "@/components/providers/language-provider";
+import { useUser } from "@/hooks/use-user";
 import { LogIn, Send } from "lucide-react";
 
 interface ReplyComposerProps {
@@ -24,6 +25,9 @@ export function ReplyComposer({
   onCancel,
   autoFocus = false,
 }: ReplyComposerProps) {
+  const { user, loading: authLoading } = useUser();
+  const effectiveUserId = user?.id ?? currentUserId ?? null;
+
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,12 +36,18 @@ export function ReplyComposer({
   const { t, language } = useLanguage();
 
   useEffect(() => {
-    if (autoFocus && currentUserId) {
+    if (autoFocus && effectiveUserId) {
       textareaRef.current?.focus();
     }
-  }, [autoFocus, currentUserId]);
+  }, [autoFocus, effectiveUserId]);
 
-  if (!currentUserId) {
+  if (authLoading) {
+    return (
+      <div className="h-28 animate-pulse rounded-2xl border border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-900/50" />
+    );
+  }
+
+  if (!effectiveUserId) {
     return (
       <>
         <div className="relative overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-900/50">
@@ -79,6 +89,12 @@ export function ReplyComposer({
     setLoading(false);
 
     if (result.error) {
+      if (
+        result.error.toLowerCase().includes("signed in") ||
+        result.error.toLowerCase().includes("sign in")
+      ) {
+        setAuthOpen(true);
+      }
       setError(result.error);
       return;
     }
@@ -88,39 +104,50 @@ export function ReplyComposer({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
-      <textarea
-        ref={textareaRef}
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder={t("Write your reply...", "Andika jibu lako...")}
-        rows={3}
-        className="w-full resize-none rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-800 dark:focus:border-brand-400"
-        disabled={loading}
-      />
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-2xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900"
+      >
+        <textarea
+          ref={textareaRef}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={t("Write your reply...", "Andika jibu lako...")}
+          rows={3}
+          className="w-full resize-none rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-800 dark:focus:border-brand-400"
+          disabled={loading}
+        />
 
-      {error && (
-        <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>
-      )}
+        {error && (
+          <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>
+        )}
 
-      <div className="mt-3 flex items-center justify-between">
-        <div className="text-xs text-stone-400">
-          {parentId
-            ? t("Replying to a comment", "Unajibu maoni")
-            : t("Replying to thread", "Unajibu uzi")}
-        </div>
-        <div className="flex items-center gap-2">
-          {onCancel && (
-            <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-              {t("Cancel", "Ghairi")}
+        <div className="mt-3 flex items-center justify-between">
+          <div className="text-xs text-stone-400">
+            {parentId
+              ? t("Replying to a comment", "Unajibu maoni")
+              : t("Replying to thread", "Unajibu uzi")}
+          </div>
+          <div className="flex items-center gap-2">
+            {onCancel && (
+              <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+                {t("Cancel", "Ghairi")}
+              </Button>
+            )}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={loading || !body.trim()}
+              className="gap-1.5"
+            >
+              <Send className="h-3.5 w-3.5" />
+              {loading ? t("Posting...", "Inachapisha...") : t("Reply", "Jibu")}
             </Button>
-          )}
-          <Button type="submit" size="sm" disabled={loading || !body.trim()} className="gap-1.5">
-            <Send className="h-3.5 w-3.5" />
-            {loading ? t("Posting...", "Inachapisha...") : t("Reply", "Jibu")}
-          </Button>
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+    </>
   );
 }

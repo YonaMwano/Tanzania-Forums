@@ -7,16 +7,16 @@ import { createThread } from "@/actions/threads";
 import { Button } from "@/components/ui/button";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { useLanguage } from "@/components/providers/language-provider";
+import { useUser } from "@/hooks/use-user";
 import type { Category } from "@/types/database";
-import type { User } from "@supabase/supabase-js";
 
 function NewThreadForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselected = searchParams.get("category");
   const { t, language } = useLanguage();
+  const { user, loading: authLoading } = useUser();
 
-  const [user, setUser] = useState<User | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState("");
@@ -26,12 +26,13 @@ function NewThreadForm() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      if (!data.user) setAuthOpen(true);
-    });
+    if (!authLoading && !user) {
+      setAuthOpen(true);
+    }
+  }, [authLoading, user]);
 
+  useEffect(() => {
+    const supabase = createClient();
     supabase
       .from("categories")
       .select("*")
@@ -39,9 +40,9 @@ function NewThreadForm() {
       .order("sort_order")
       .then(({ data }) => {
         if (data) {
-          setCategories(data);
+          setCategories(data as Category[]);
           if (preselected) {
-            const match = data.find((c) => c.slug === preselected);
+            const match = (data as Category[]).find((c) => c.slug === preselected);
             if (match) setCategoryId(match.id);
           }
         }
@@ -68,12 +69,19 @@ function NewThreadForm() {
     setLoading(false);
 
     if (result.error) {
+      if (
+        result.error.toLowerCase().includes("signed in") ||
+        result.error.toLowerCase().includes("sign in")
+      ) {
+        setAuthOpen(true);
+      }
       setError(result.error);
       return;
     }
 
     if (result.slug) {
       router.push(`/t/${result.slug}`);
+      router.refresh();
     }
   };
 
@@ -90,84 +98,81 @@ function NewThreadForm() {
           )}
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
-              {t("Category", "Kategoria")}
-            </label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              required
-              className="h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900"
-            >
-              <option value="">{t("Select a category", "Chagua kategoria")}</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name_en}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
-              {t("Title", "Kichwa")}
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              minLength={5}
-              maxLength={200}
-              placeholder={t(
-                "What do you want to discuss?",
-                "Unataka kujadili nini?"
-              )}
-              className="h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
-              {t("Your post", "Chapisho lako")}
-            </label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              required
-              minLength={10}
-              rows={8}
-              placeholder={t(
-                "Share the details, context, or question...",
-                "Shiriki maelezo, muktadha, au swali..."
-              )}
-              className="w-full resize-y rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900"
-            />
-          </div>
-
-          {error && (
-            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
-              {error}
+        {authLoading ? (
+          <div className="h-64 animate-pulse rounded-2xl bg-stone-100 dark:bg-stone-800" />
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
+                {t("Category", "Kategoria")}
+              </label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                required
+                className="h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900"
+              >
+                <option value="">{t("Select a category", "Chagua kategoria")}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name_en}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
 
-          <div className="flex items-center justify-end gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => router.back()}
-            >
-              {t("Cancel", "Ghairi")}
-            </Button>
-            <Button type="submit" disabled={loading || !user}>
-              {loading
-                ? t("Publishing...", "Inachapisha...")
-                : t("Publish discussion", "Chapisha majadiliano")}
-            </Button>
-          </div>
-        </form>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
+                {t("Title", "Kichwa")}
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                minLength={5}
+                maxLength={200}
+                placeholder={t("What do you want to discuss?", "Unataka kujadili nini?")}
+                className="h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
+                {t("Your post", "Chapisho lako")}
+              </label>
+              <textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                required
+                minLength={10}
+                rows={8}
+                placeholder={t(
+                  "Share the details, context, or question...",
+                  "Shiriki maelezo, muktadha, au swali..."
+                )}
+                className="w-full resize-y rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
+                {error}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3">
+              <Button type="button" variant="ghost" onClick={() => router.back()}>
+                {t("Cancel", "Ghairi")}
+              </Button>
+              <Button type="submit" disabled={loading || !user}>
+                {loading
+                  ? t("Publishing...", "Inachapisha...")
+                  : t("Publish discussion", "Chapisha majadiliano")}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
 
       <AuthModal

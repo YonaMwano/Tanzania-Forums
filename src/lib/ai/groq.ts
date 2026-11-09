@@ -1,8 +1,8 @@
 import Groq from "groq-sdk";
 
-function getGroq() {
-  return new Groq({ apiKey: process.env.GROQ_API_KEY });
-}
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 export async function generateThreadSummary(
   title: string,
@@ -22,7 +22,7 @@ ${conversation}
 
 Write a clear, neutral 30-second read summary (max 120 words) in plain English. Cover the main points, key arguments, and any conclusions. Do not invent facts. Do not use bullet points. Write in paragraph form.`;
 
-  const completion = await getGroq().chat.completions.create({
+  const completion = await groq.chat.completions.create({
     model: "openai/gpt-oss-120b",
     messages: [
       {
@@ -55,7 +55,7 @@ Respond ONLY with valid JSON in this exact shape:
 Reasons should be short: "hate_speech", "harassment", "spam", "misinformation", or null if clean.`;
 
   try {
-    const completion = await getGroq().chat.completions.create({
+    const completion = await groq.chat.completions.create({
       model: "openai/gpt-oss-120b",
       messages: [
         {
