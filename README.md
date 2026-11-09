@@ -102,6 +102,10 @@ This error is returned by Supabase before the application receives a session. A 
 3. Replace the localhost Site URL and configure allowed callbacks as above, then retry Google signup on the deployed HTTPS site.
 4. If signup still fails, inspect the new underlying SQL error rather than deleting users or rerunning the initial schema.
 
+If repair 002 has already succeeded but signup still fails, run `sql/003_diagnose_auth_signup.sql` in the same Supabase project's SQL Editor. This read-only script checks missing trigger dependencies, extra triggers on auth/profile tables, function-owner RLS privileges, mandatory columns, constraints, and self-referencing profile policies. It does not insert a test account or expose account rows. Use its results alongside the underlying Auth/Postgres error to select a targeted repair; do not disable triggers or row-level security to bypass the failure.
+
+The existing `Admins full access users` policy selects from `public.users` inside a policy on that same table. This can cause infinite recursion on profile reads after login. It is a separate potential problem from a signup trigger running as a privileged owner, so it should not be assumed to explain an Auth account-creation failure without the database error.
+
 The SQL repair is an existing Supabase Auth integration repair; it is not applied automatically by a Netlify deploy. No live Supabase configuration or database changes were made by this code change.
 
 ---
