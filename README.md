@@ -75,36 +75,34 @@ npm install
 
 ### 2. Environment
 
-```bash
-cp .env.local.example .env.local
-```
-
-```env
-
+Configure the Supabase URL and publishable key in the Netlify project's environment settings using the names read by the Supabase client modules. Never commit credential values.
 
 ### 3. Database setup
 
-1. Open your Supabase project SQL Editor
-2. Paste and run the entire contents of `sql/001_schema.sql`
-3. Confirm tables, RLS policies, and seed categories appear
+For a fresh installation only, run `sql/001_schema.sql` in the existing Supabase project's SQL Editor. Do not rerun this file on an existing database.
 
-### 4. Google OAuth
+### 4. Google OAuth on the deployed site
 
-In Supabase Dashboard → Authentication → Providers:
+In Supabase Dashboard → Authentication → URL Configuration:
 
-- Google enabled with Client ID and Secret
-- Redirect URL includes your Supabase auth callback
-- Site URL and additional redirect URLs include local and production domains
+- Set **Site URL** to `https://lucent-elf-caf82b.netlify.app` (replace the localhost default).
+- Add `https://lucent-elf-caf82b.netlify.app/auth/callback` to **Redirect URLs**. Supabase also checks query parameters against its redirect rules; add `https://lucent-elf-caf82b.netlify.app/auth/callback?**` for the app's `next` parameter.
+- If testing a Deploy Preview, add its exact HTTPS callback URL and the equivalent query wildcard rule too.
 
-### 5. Run locally
+In Authentication → Providers, enable Google. In Google Cloud Console, use the Supabase Auth callback shown by the Google provider settings as the authorized redirect URI. The Google callback and the app's `/auth/callback` are separate steps.
 
-```bash
-npm run dev
-```
+Open `https://lucent-elf-caf82b.netlify.app` to test sign-in. The first Google sign-in becomes Admin and is redirected to `/admin/onboarding`.
 
-Open http://localhost:3000
+### Troubleshooting “Database error saving new user”
 
-The first Google sign-in becomes Admin and is redirected to `/admin/onboarding`.
+This error is returned by Supabase before the application receives a session. A redirect change alone cannot fix it.
+
+1. Check Supabase Authentication logs and Postgres logs for the failing signup. The underlying SQL error identifies the actual cause.
+2. If the existing database uses this repository's schema, run `sql/002_repair_auth_signup.sql` in that Supabase project's SQL Editor. This targeted repair qualifies the signup trigger's enum and helper function and pins its search path. It preserves accounts and forum data. It requires the original tables and helper function to exist.
+3. Replace the localhost Site URL and configure allowed callbacks as above, then retry Google signup on the deployed HTTPS site.
+4. If signup still fails, inspect the new underlying SQL error rather than deleting users or rerunning the initial schema.
+
+The SQL repair is an existing Supabase Auth integration repair; it is not applied automatically by a Netlify deploy. No live Supabase configuration or database changes were made by this code change.
 
 ---
 

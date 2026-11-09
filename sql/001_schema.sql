@@ -364,11 +364,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Handle new user signup (first user becomes admin)
-CREATE OR REPLACE FUNCTION handle_new_user()
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
   user_count INTEGER;
-  new_role user_role;
+  new_role public.user_role;
   new_handle TEXT;
 BEGIN
   SELECT COUNT(*) INTO user_count FROM public.users;
@@ -379,7 +379,7 @@ BEGIN
     new_role := 'member';
   END IF;
   
-  new_handle := generate_unique_handle();
+  new_handle := public.generate_unique_handle();
   
   INSERT INTO public.users (id, handle, display_name, avatar_url, role)
   VALUES (
@@ -398,11 +398,11 @@ BEGIN
   
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Update thread stats on post insert
 CREATE OR REPLACE FUNCTION update_thread_on_post()

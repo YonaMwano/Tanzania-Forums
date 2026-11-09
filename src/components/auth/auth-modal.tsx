@@ -14,6 +14,7 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onClose, message }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { t } = useLanguage();
   const supabase = createClient();
 
@@ -21,6 +22,7 @@ export function AuthModal({ open, onClose, message }: AuthModalProps) {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -29,11 +31,11 @@ export function AuthModal({ open, onClose, message }: AuthModalProps) {
         },
       });
       if (error) {
-        console.error("Auth error:", error.message);
+        setErrorMessage(t("Google sign-in could not start. Please try again.", "Imeshindikana kuanza kuingia kwa Google. Tafadhali jaribu tena."));
         setLoading(false);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setErrorMessage(t("Google sign-in could not start. Please try again.", "Imeshindikana kuanza kuingia kwa Google. Tafadhali jaribu tena."));
       setLoading(false);
     }
   };
@@ -77,6 +79,12 @@ export function AuthModal({ open, onClose, message }: AuthModalProps) {
               )}
           </p>
         </div>
+
+        {errorMessage && (
+          <p role="alert" className="mb-4 text-sm text-red-600 dark:text-red-400">
+            {errorMessage}
+          </p>
+        )}
 
         <Button
           onClick={handleGoogleSignIn}

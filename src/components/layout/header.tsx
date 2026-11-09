@@ -34,6 +34,7 @@ export function Header() {
   const { language, setLanguage, t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [authFailed, setAuthFailed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const supabase = createClient();
@@ -45,6 +46,15 @@ export function Header() {
     });
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const hash = new URLSearchParams(url.hash.slice(1));
+    if (url.searchParams.has("auth_error") || url.searchParams.has("error") || hash.has("error")) {
+      setAuthFailed(true);
+      setAuthOpen(true);
+    }
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -186,7 +196,14 @@ export function Header() {
         )}
       </header>
 
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthModal
+        open={authOpen}
+        onClose={() => { setAuthOpen(false); setAuthFailed(false); }}
+        message={authFailed ? t(
+          "Google sign-in failed. If this keeps happening, contact the site administrator so they can check the signup configuration.",
+          "Imeshindikana kuingia kwa Google. Tatizo likiendelea, wasiliana na msimamizi wa tovuti akague mipangilio ya usajili."
+        ) : undefined}
+      />
     </>
   );
 }
