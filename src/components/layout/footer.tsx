@@ -9,7 +9,7 @@ export function Footer() {
   return (
     <footer className="border-t border-stone-200 bg-stone-50 dark:border-stone-800 dark:bg-stone-950">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
           <div>
             <div className="mb-3 flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
@@ -37,11 +37,6 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-sm text-stone-500 dark:text-stone-400">
               <li>
-                <Link href="/guidelines" className="hover:text-brand-600 dark:hover:text-brand-400">
-                  {t("Guidelines", "Miongozo")}
-                </Link>
-              </li>
-              <li>
                 <Link href="/c/jamiicheck" className="hover:text-brand-600 dark:hover:text-brand-400">
                   JamiiCheck
                 </Link>
@@ -54,41 +49,6 @@ export function Footer() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="mb-3 text-sm font-semibold text-stone-900 dark:text-stone-50">
-              {t("Legal", "Kisheria")}
-            </h3>
-            <ul className="space-y-2 text-sm text-stone-500 dark:text-stone-400">
-              <li>
-                <Link href="/privacy" className="hover:text-brand-600 dark:hover:text-brand-400">
-                  {t("Privacy Policy", "Sera ya Faragha")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/transparency" className="hover:text-brand-600 dark:hover:text-brand-400">
-                  {t("Transparency Report", "Ripoti ya Uwazi")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-brand-600 dark:hover:text-brand-400">
-                  {t("Contact", "Wasiliana")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="mb-3 text-sm font-semibold text-stone-900 dark:text-stone-50">
-              {t("Developers", "Waendelezaji")}
-            </h3>
-            <ul className="space-y-2 text-sm text-stone-500 dark:text-stone-400">
-              <li>
-                <Link href="/api-docs" className="hover:text-brand-600 dark:hover:text-brand-400">
-                  API
-                </Link>
-              </li>
-            </ul>
-          </div>
         </div>
 
         <div className="mt-10 border-t border-stone-200 pt-6 text-center text-sm text-stone-400 dark:border-stone-800">

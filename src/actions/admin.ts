@@ -305,19 +305,21 @@ export async function updateSiteSetting(key: string, value: unknown) {
   return { success: true };
 }
 
-export async function completeOnboarding(formData: FormData) {
+export async function completeOnboarding(formData: FormData): Promise<{ success?: boolean; error?: string }> {
   const { supabase, user } = await requireAdmin();
 
   const siteName = formData.get("site_name") as string;
   const tagline = formData.get("tagline") as string;
   const defaultLanguage = formData.get("default_language") as string;
 
-  await supabase.from("site_settings").upsert([
+  const { error } = await supabase.from("site_settings").upsert([
     { key: "site_name", value: JSON.stringify(siteName), updated_by: user.id },
     { key: "site_tagline", value: JSON.stringify(tagline), updated_by: user.id },
     { key: "default_language", value: JSON.stringify(defaultLanguage), updated_by: user.id },
     { key: "onboarding_complete", value: "true", updated_by: user.id },
   ]);
+
+  if (error) return { error: "Could not save forum settings. Please try again." };
 
   await supabase.from("audit_log").insert({
     actor_id: user.id,

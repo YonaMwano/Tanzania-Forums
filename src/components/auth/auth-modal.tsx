@@ -14,6 +14,7 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onClose, message }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { t } = useLanguage();
   const supabase = createClient();
 
@@ -21,6 +22,7 @@ export function AuthModal({ open, onClose, message }: AuthModalProps) {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -29,11 +31,11 @@ export function AuthModal({ open, onClose, message }: AuthModalProps) {
         },
       });
       if (error) {
-        console.error("Auth error:", error.message);
+        setErrorMessage("Sign-in is unavailable. Please try again.");
         setLoading(false);
       }
     } catch (err) {
-      console.error(err);
+      setErrorMessage("Sign-in is unavailable. Please try again.");
       setLoading(false);
     }
   };
@@ -52,6 +54,7 @@ export function AuthModal({ open, onClose, message }: AuthModalProps) {
           <X className="h-5 w-5" />
         </button>
 
+        {errorMessage && <p role="alert" className="mb-4 text-sm text-red-600">{errorMessage}</p>}
         <div className="mb-6 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100 dark:bg-brand-900/40">
             <svg

@@ -39,6 +39,8 @@ export function Header() {
   const supabase = createClient();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("auth") === "required") setAuthOpen(true);
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);

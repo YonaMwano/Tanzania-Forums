@@ -59,7 +59,7 @@ Tanzania's open forum for ideas, truth, and community. Built with Next.js 15, Su
 | AI           | Groq (`openai/gpt-oss-120b`)        |
 | Icons        | Lucide React                        |
 | Theme        | next-themes                         |
-| Deployment   | Vercel                              |
+| Deployment   | Netlify                             |
 
 ---
 
@@ -79,8 +79,7 @@ npm install
 cp .env.local.example .env.local
 ```
 
-```env
-
+Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `GROQ_API_KEY` in the local environment or Netlify project settings. Never commit their values.
 
 ### 3. Database setup
 
@@ -133,7 +132,7 @@ tanzania-forums/
 │   │   └── utils.ts
 │   ├── types/database.ts
 │   └── middleware.ts
-├── vercel.json
+├── netlify.toml
 └── package.json
 ```
 
@@ -170,3 +169,13 @@ tanzania-forums/
 ## License
 
 Private — Tanzania Forums team.
+
+## Netlify deployment and 404 troubleshooting
+
+The repository's `netlify.toml` sets `npm run build` as the build command and `.next` as the publish directory. Netlify automatically supplies its Next.js adapter for server rendering, middleware, authentication callbacks, and server actions. Deploy the repository root; do not publish it as a static folder or add an `index.html` catch-all redirect.
+
+For an existing database created with the original schema, run `sql/002_fix_users_policy_recursion.sql` once in its SQL Editor as the database owner. This repairs the recursive administrator policy without deleting any data. The original policy causes PostgreSQL error `42P17` on categories, threads, and profiles. Fresh databases should use the corrected `sql/001_schema.sql` instead.
+
+Confirm Google OAuth allows the deployed site's `/auth/callback` URL. After deploying, check `/`, `/trending`, `/search`, `/c/siasa`, and an existing `/t/<slug>` page. Signed-out requests to `/admin` and `/settings` should redirect to sign-in. Unknown categories, discussions, and profiles should return a proper 404 after the database policy repair.
+
+Run `npx tsc --noEmit --incremental false` to check TypeScript without creating production build artifacts.

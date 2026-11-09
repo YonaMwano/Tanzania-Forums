@@ -78,7 +78,7 @@ export async function createThread(formData: FormData) {
   }
 
   revalidatePath("/");
-  revalidatePath(`/c/${categoryId}`);
+  revalidatePath("/c/[slug]", "page");
   return { success: true, slug: thread.slug };
 }
 
