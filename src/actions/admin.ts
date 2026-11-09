@@ -312,12 +312,14 @@ export async function completeOnboarding(formData: FormData) {
   const tagline = formData.get("tagline") as string;
   const defaultLanguage = formData.get("default_language") as string;
 
-  await supabase.from("site_settings").upsert([
+  const { error } = await supabase.from("site_settings").upsert([
     { key: "site_name", value: JSON.stringify(siteName), updated_by: user.id },
     { key: "site_tagline", value: JSON.stringify(tagline), updated_by: user.id },
     { key: "default_language", value: JSON.stringify(defaultLanguage), updated_by: user.id },
     { key: "onboarding_complete", value: "true", updated_by: user.id },
   ]);
+
+  if (error) return { error: error.message };
 
   await supabase.from("audit_log").insert({
     actor_id: user.id,
