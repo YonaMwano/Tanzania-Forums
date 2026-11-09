@@ -305,7 +305,9 @@ export async function updateSiteSetting(key: string, value: unknown) {
   return { success: true };
 }
 
-export async function completeOnboarding(formData: FormData) {
+export async function completeOnboarding(
+  formData: FormData
+): Promise<{ success: boolean; error?: string }> {
   const { supabase, user } = await requireAdmin();
 
   const siteName = formData.get("site_name") as string;
